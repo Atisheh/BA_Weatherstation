@@ -1,0 +1,36 @@
+<!DOCTYPE HTML5>
+<html>
+<head>
+<title>weatherstation</title>
+  <style type="text/css">
+  h1 {
+	font-family: Calibri;
+	font-stretch:ultra-expanded;
+	font-variant: small-caps;
+	font-size: xxx-large;}
+  h2 {
+	font-family: Calibri;
+	font-size: x-large;
+	font-weight: 300}
+  body {
+    color: #FFFFFF;
+    background-color: #2E9AFE;
+	text-align: center;
+	font-family: Calibri;
+	font-size: large;
+	font-weight: 200;}
+  </style>
+</head>
+<body>
+	<h1>Weatherstation<h1/>
+	<br />
+	<h2>This pages shows you the actual room temperature, the humidity and the pressure.<h2/>
+	<br />
+	<p>Temperature: {{temp}}<p/>
+	<p><img src='/img/temp.png' alt="Temperature" /><p/>
+	<p>Presure: {{pres}}<p/>
+	<p><img src="../pres.png" alt="Presure" /><p/>
+	<p>Humidity: {{hum}}<p/>
+	<p><img src="../hum.png" alt="Humidity" /><p/>
+</body>
+</html>

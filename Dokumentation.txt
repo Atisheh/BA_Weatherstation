@@ -1,0 +1,209 @@
+﻿# Wetterstation #
+
+protokoll I2c und warum, warum GPIO
+bottle, warum?
+alles im zip
+keine exe
+
+matplotlib installation windows/linux
+
+# Komponenten #
+
+	- Raspberry Pi mit normalem Zubehör und Raspbian
+	- Temperatursensor TMP102
+	- Feuchtigkeitssensor HIH6130
+	- Höhendrucksensor MPL3115A2
+	- Steckboard mit Drahtbrücken
+	- Python Version X.X
+	- Python Libraries: 
+			RPi.GPIO ()
+			OS
+			CSV (1.0)
+			Matplotlib (1.3.1)
+			Bottle (0.11.16)
+			Datetime 
+			Time
+			Threading
+
+# verwendete Dateien #
+	- startWeather.py
+		- wetterstation.py
+		- web.py
+			-weather.tpl 
+
+# Funktionen #
+
+	# startWeather.py #
+	
+		# @route('/weather') #
+		# def weather(temp = newData.data_list[newData.end-1][1], pres = newData.data_list[newData.end-1][2], hum = newData.data_list[newData.end-1][3]): #
+		Legt den Pfad 'http://localhost:8080/weather' an, übergibt aktuelle Messwerte an die Webseite und legt das zu benutzende Template (weather.tpl) fest
+		
+		# @route('/img/<filename>') #
+		# def send_static(filename): #
+		Verweist auf den Pfad in dem die Bilder liegen
+		
+		# def runSite(): #
+		Bestimmt und Startet den Host
+		
+		# if __name__ == '__main__': #
+		speichert 10 Messwerte in das CSV
+		Objekt für getData() anlegen
+		einmaliger Aufruf von runWeatherstation() zum Bereitstellen der Daten
+		Thread für Webseite und Datenbereitstellung starten
+		Schleife um in bestimmten Zeitabständen Messwerte zu schreiben
+		
+	
+	# wetterstation.py #
+	
+		# def I2C_Init(): #
+		Initialisierung der verwendeten Portpins
+		Portpins werden auf H gesetzt
+		
+		# def I2C_Start(): #
+		senden der Startbits
+		SDA, SCL von 1 auf 0 setzen
+		
+		# def I2C_RepeatStart(): #
+		Startbit vor einem Empfang erneut senden
+		SDA und SCL auf 0 und dann auf 1 setzten
+		
+		# def I2C_Stop(): #
+		Stoppbit senden
+		SDA, SCL von 0 auf 1 setzen
+		
+		# def I2C_Read_Byte( ack): #
+		Bitweises Empfangen eines Bytes
+		SDA wieder auch Ausgang setzen
+		Nach dem Lesen NACK senden
+		return: String 'eingelesen' mit den Binärdaten 
+		
+		# def I2C_Write_Byte( ausgabe): #
+		Bitweises Senden eines Bytes
+		Takt für Acknowledge setzen
+		SDA auf Ausgabe setzen
+		
+		# def Write_Reg_MPL( reg, wert): #
+		Datum in ein Register des MPL schreiben
+		ruft ISC_Start() auf
+		ruft I2C_Write_Byte() auf und übergibt
+			Bausteinadresse + Schreibsignal
+			Adresse des Registers
+			Wert, der zu schreiben ist
+		ruft I2C_Stop() auf
+		
+		# def Read_Reg_MPL( reg): #
+		Datum aus einem Register des MPL lesen
+		ruft ISC_Start() auf
+		ruft I2C_Write_Byte() auf und übergibt
+			Bausteinadresse + Schreibsignal
+			Adresse des Registers
+		ruft I2C_RepeatStart() auf
+		ruft I2C_Write_Byte() auf und übergibt
+			Bausteinadresse + Lesesignal
+		liest Binaerstring  ein
+		ruft I2C_Stop() auf
+		
+		# def Read_TMP102( ): #
+		Datum aus einem Register des TMP102 lesen
+		ruft I2C_Start() auf
+		ruft I2C_Write_Byte() auf und übergibt
+			Bausteinadresse + Schreibsignal
+			Adresse des Registers
+		ruft I2C_Stop() auf
+		ruft I2C_Start() auf
+		ruft I2C_Write_Byte() auf und übergibt
+			Bausteinadresse + Lesesignal
+		liest Binaerstring ein
+		ruft I2C_Stop() auf
+		Umwandlung der Zahlen in Hexadezimal
+		return: aktuelle Temperaturdaten
+		
+		# def Read_HIH6130( ): #
+		Datum aus einem Register des HIH6130 lesen
+		ruft I2C_Start() auf
+		ruft I2C_Write_Byte() auf und übergibt
+			Bausteinadresse + Schreibsignal
+		ruft I2C_Stop() auf
+		ruft I2C_Start() auf
+		ruft I2C_Write_Byte() auf und übergibt
+			Bausteinadresse + Lesesignal
+			Feuchtigkeit und Temperatur werden eingelesen
+			liest Binaerstrings ein
+		ruft I2C_Stop() auf
+		Umwandlung der Zahlen in Hexadezimal
+		return: aktuelle Luftfeuchtigkeits- und Temperaturdaten
+		
+		# def Read_MLP( ): #
+		MPL auslesen
+		auslesen des 'Who Am I' Registers
+		ruft Write_Reg_MPL() auf und übergibt Datenflags
+		ruft Write_Reg_MPL() auf und übergibt Adresse des Hoehenmessers
+		Warten bis Messung fertig ist
+		liest Hoehen Daten mit Read_Reg_MPL() aus
+		liest Temperatur mit Read_Reg_MPL() aus
+		ruft Write_Reg_MPL() auf und übergibt Datenflags
+		ruft Write_Reg_MPL() auf und übergibt Adresse des Barometers
+		Warten bis Messung fertig ist
+		liest Druck Daten mit Read_Reg_MPL() aus
+		liest Temperatur mit Read_Reg_MPL() aus
+		Umrechnung Temperatur, Hoehe, Druck in Dezimalzahlen
+		return: aktuelle Druck-, Hoehe- und Temperaturdaten
+		
+		# def Write_Data(): #
+		CSV-Datei anlegen und Daten rein schreiben
+		ruft I2C_Init() auf
+		Legt CSV-Datei an, wenn noch nicht vorhanden 
+		und setzt die Überschriften in der CSV
+		ruft Read_MLP() auf und liest Daten ein
+		ruft Read_TMP102() auf und liest Daten ein
+		ruft Read_HIH6130() auf und liest Daten ein
+		schreibt aktuelle Daten in CSV-Datei 
+			Zeitstempel, Temperatur, Luftdruck, Luftfeuchtigkeit
+		
+	# web.py #
+		
+		# def __init__(self): #
+			legt Instanzvariablen data_list und end an
+
+		# def runWeatherstation(self): #
+			liest CSV-File aus und schreibt den Inhalt in data_list
+			nimmt nur die letzten 10 Werte der CSV-Datei
+			legt timeList aus Zeitstempel(hh:mm) als float an
+			legt timeList2 aus Zeitstempel(hh:mm) als String an
+			legt tempList aus Temperaturdaten als float an
+			Erzeugung eines Graphen anhand der Temperatur und Zeitdaten
+			Speicherung des Graphen als Bild
+			legt presList aus Druckdaten als float an
+			Erzeugung eines Graphen anhand des Drucks und Zeitdaten
+			Speicherung des Graphen als Bild
+			legt humList aus Luftfeuchtigkeitsdaten als float an
+			Erzeugung eines Graphen anhand der Luftfeuchtigkeit und Zeitdaten
+			Speicherung des Graphen als Bild
+	
+	# weather.tpl *
+		
+		# <h1>Weatherstation</h1> #
+		Ueberschrift der Webseite
+		
+		# <h2>This pages shows you the actual room temperature, the humidity and the pressure.</h2> #
+		Erlaeuterung zur Funktion der Webseite
+		
+		# <p>Temperature: {{temp}} °C</p> #
+		Einbinden der aktuellen Temperatur in °C
+		
+		# <p><img src='/img/temp.png' alt="Temperature", width="40%" /></p> #
+		Einbinden des dazugehörigen Graphen mit Größe 40%
+		
+		# <p>Presure: {{pres}} hPa</p> #
+		Einbinden des aktuellen Luftdrucks in hPa
+		
+		# <p><img src="img/pres.png" alt="Presure", width="40%" /></p> #
+		Einbinden des dazugehörigen Graphen mit Größe 40%
+		
+		# <p>Humidity: {{hum}} %</p> #
+		Einbinden der aktuellen Luftfeuchtigkeit in %
+		
+		# <p><img src="img/hum.png" alt="Humidity", width="40%" /></p> #
+		Einbinden des dazugehörigen Graphen mit Größe 40%
+		
